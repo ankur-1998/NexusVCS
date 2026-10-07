@@ -1,0 +1,33 @@
+[package]
+name = "nexus"
+description = "The nexus command-line tool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "nexus"
+path = "src/main.rs"
+
+[features]
+default = ["ui", "tui"]
+# `nexus ui`: the local web server and dashboard (Phase 7 onward).
+ui = ["dep:nexus-server"]
+# `nexus tui`: the terminal dashboard (Phase 6 onward).
+tui = ["dep:nexus-tui"]
+
+[dependencies]
+anstream.workspace = true
+anstyle.workspace = true
+clap.workspace = true
+ctrlc.workspace = true
+nexus-core.workspace = true
+nexus-server = { workspace = true, optional = true }
+nexus-tui = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,82 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+# `cargo run -- <args>` runs the `nexus` binary. Tasks that cover everything
+# (`cargo xtask ci`) pass `--workspace` explicitly.
+default-members = ["crates/nexus"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace.dependencies]
+# Internal crates.
+nexus-core = { path = "crates/nexus-core" }
+nexus-server = { path = "crates/nexus-server" }
+nexus-tui = { path = "crates/nexus-tui" }
+
+# External crates. Each one needs a one-line reason (spec §1, rule 7).
+# Argument parsing shared by the CLI and the web terminal (spec §5.2).
+clap = { version = "4", features = ["derive"] }
+# Object IDs are SHA-256 (spec §4). Uses the CPU's SHA instructions when available.
+sha2 = "0.11"
+# Object compression (spec §4). C code built by the platform's own compiler, via cc.
+zstd = { version = "0.14", default-features = false }
+# Content-defined chunking for files of 8 MiB or more. Pinned exactly, because the
+# chunk boundaries are part of the on-disk format (spec §4).
+fastcdc = "=5.0.0"
+# Parallel directory walking with gitignore semantics, from ripgrep (spec §3).
+ignore = "0.4"
+# Hashing and compressing files in parallel (spec §3).
+rayon = "1"
+# Atomic writes: a temp file in the target directory, then a rename (spec §4).
+tempfile = "3"
+# Error types for the library crates (spec §3).
+thiserror = "2"
+# The local UTC offset recorded with every commit and operation (spec §4).
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# Line diffs (spec §3): histogram by default, Myers on request.
+imara-diff = { version = "0.2", default-features = false }
+# Edits config.toml without discarding the user's comments and layout.
+toml_edit = "0.25"
+# NFC-normalizes stored paths, because macOS can report decomposed names (spec §4).
+unicode-normalization = "0.1"
+# CLI colors: honors NO_COLOR, handles Windows consoles, strips colors when piped (spec §3).
+anstream = "1"
+anstyle = "1"
+# CLI only: removes .nexus/lock when Ctrl+C or a termination signal ends a command. Pure Rust.
+ctrlc = { version = "3", features = ["termination"] }
+# Tests only: property-based tests of the binary formats.
+proptest = "1"
+# xtask only: gzip sizes for the dashboard's bundle budget (spec §6). Pure Rust backend.
+flate2 = "1"
+# xtask only: reads cargo's JSON build messages to find the binaries it built.
+serde_json = "1"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Pedantic lints that cost more than they catch in this codebase.
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+must_use_candidate = "allow"
+# Extra discipline beyond the default groups.
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# Dependencies are optimized even in dev and test builds. Hashing, compression,
+# and chunking at -O0 would make the large-file tests many times slower. Our own
+# crates stay unoptimized, so they still compile quickly.
+[profile.dev.package."*"]
+opt-level = 3

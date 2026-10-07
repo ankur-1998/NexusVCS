@@ -1,0 +1,4 @@
+# Check out text files with LF line endings on every OS. Git on Windows
+# (including GitHub's Windows runners) otherwise converts them to CRLF, and the
+# rustfmt and Prettier checks in `cargo xtask ci` would fail there.
+* text=auto eol=lf

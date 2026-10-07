@@ -1,0 +1,5 @@
+[alias]
+# Project automation lives in the `xtask` crate: `cargo xtask help` lists the tasks.
+# `--locked` stops this first build from quietly rewriting a stale Cargo.lock,
+# which would let the `--locked` steps inside `cargo xtask ci` pass anyway.
+xtask = "run --locked --package xtask --"

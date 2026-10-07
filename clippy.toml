@@ -1,0 +1,45 @@
+# Privacy rule (spec §5.5): network sockets and DNS lookups are only allowed in
+# `nexus_core::net`. That module opts out with
+# `#[allow(clippy::disallowed_methods, clippy::disallowed_types)]`. Anywhere
+# else, these calls fail `cargo xtask ci`, which runs clippy with `-D warnings`.
+#
+# Paths into crates that aren't dependencies yet (tokio arrives in Phase 7,
+# ureq in Phase 15) are ignored until the crate is added, then enforced. A path
+# that doesn't resolve in a crate that *is* present makes clippy print "does not
+# refer to a reachable ...", and `cargo xtask ci` fails on that message, so a
+# typo can't silently disable a rule. When a phase adds any other crate that can
+# open sockets, add its APIs here in the same change.
+#
+# Keep all clippy configuration in this one file: clippy reads the nearest
+# clippy.toml, so a crate-level one would drop these rules for that crate.
+disallowed-methods = [
+  # std
+  { path = "std::net::TcpStream::connect", reason = "network access goes through nexus_core::net (spec §5.5)" },
+  { path = "std::net::TcpStream::connect_timeout", reason = "network access goes through nexus_core::net (spec §5.5)" },
+  { path = "std::net::TcpListener::bind", reason = "resolves hostnames and can bind any interface; listeners come from nexus_core::net (spec §5.3, §5.5)" },
+  { path = "std::net::UdpSocket::bind", reason = "network access goes through nexus_core::net (spec §5.5)" },
+  { path = "std::net::ToSocketAddrs::to_socket_addrs", reason = "DNS lookups go through nexus_core::net (spec §5.5)" },
+  # tokio (Phase 7)
+  { path = "tokio::net::TcpStream::connect", reason = "network access goes through nexus_core::net (spec §5.5)" },
+  { path = "tokio::net::TcpListener::bind", reason = "resolves hostnames and can bind any interface; listeners come from nexus_core::net (spec §5.3, §5.5)" },
+  { path = "tokio::net::UdpSocket::bind", reason = "network access goes through nexus_core::net (spec §5.5)" },
+  { path = "tokio::net::lookup_host", reason = "DNS lookups go through nexus_core::net (spec §5.5)" },
+  # ureq (Phase 15)
+  { path = "ureq::get", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::post", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::put", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::delete", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::head", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::patch", reason = "HTTP requests go through nexus_core::net (spec §5.5)" },
+]
+disallowed-types = [
+  { path = "tokio::net::TcpSocket", reason = "raw sockets go through nexus_core::net (spec §5.5)" },
+  { path = "ureq::Agent", reason = "HTTP clients go through nexus_core::net (spec §5.5)" },
+]
+
+# Tests may unwrap and expect freely; production code may not unwrap.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+
+# Product names that clippy's doc_markdown lint would otherwise ask to backtick.
+doc-valid-idents = ["NexusVCS", ".."]

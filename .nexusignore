@@ -1,0 +1,8 @@
+# Paths NexusVCS doesn't track, in .gitignore syntax.
+.git/
+node_modules/
+target/
+dist/
+build/
+.env
+*.log
